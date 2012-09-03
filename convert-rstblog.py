@@ -19,7 +19,7 @@ for post in posts:
     print 'Processing %s...' % title
 
     dt = datetime.strptime(post[u'post_date'], '%Y/%m/%d %H:%M:%SZ')
-    path = '%s/%s/%s' % (dt.year, dt.month, dt.day)
+    path = '%04d/%02d/%02d/%s' % (dt.year, dt.month, dt.day, post[u'name'])
 
     try:
         os.makedirs('out/%s' % path)
@@ -27,7 +27,7 @@ for post in posts:
         if e.errno != errno.EEXIST:
             raise
 
-    with open('out/%s/%s.rst' % (path, post[u'name']), 'w') as outfile:
+    with open('out/%s/index.rst' % path, 'w') as outfile:
         print >> outfile, 'public: yes'
         #print >> outfile, ('tags: [%s]' % ','.join(post[u'tags'])).encode('utf-8')
         print >> outfile, ('tags: [%s]' % ','.join(post[u'categories'])).encode('utf-8')
