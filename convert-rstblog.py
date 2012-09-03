@@ -28,9 +28,9 @@ for post in posts:
             raise
 
     with open('out/%s/index.rst' % path, 'w') as outfile:
+        tags = post[u'categories'] + post[u'tags']
         print >> outfile, 'public: yes'
-        #print >> outfile, ('tags: [%s]' % ','.join(post[u'tags'])).encode('utf-8')
-        print >> outfile, ('tags: [%s]' % ','.join(post[u'categories'])).encode('utf-8')
+        print >> outfile, ('tags: [%s]' % ','.join('"' + x + '"' for x in tags)).encode('utf-8')
         print >> outfile
         print >> outfile, post[u'title'].encode('utf-8')
         print >> outfile, '=' * len(post[u'title'])
