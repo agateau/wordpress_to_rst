@@ -57,7 +57,10 @@ class WP_Importer(object):
             })
         # posts
         posts = []
+        attachments = []
+        pages = []
         for post in data.findall("channel/item"):
+            post_type = post.findtext(wp_ns + 'post_type')
             p = {
                 'id': post.findtext(wp_ns + 'post_id'),
                 'title': post.findtext('title'),
@@ -88,11 +91,22 @@ class WP_Importer(object):
                     }
                     comments.append(cmt)
                 p['comments'] = comments
-            posts.append(p)
+
+            if post_type == "attachment":
+                attachments.append(p)
+            elif post_type == "page":
+                pages.append(p)
+            elif post_type == "post":
+                posts.append(p)
+            else:
+                print "WARNING: Unknown post type %s" % post_type
+                continue
 
         blog['categories'] = categories
         blog['tags'] = tags
         blog['posts'] = posts
+        blog['pages'] = pages
+        blog['attachments'] = attachments
 
         return blog
 
