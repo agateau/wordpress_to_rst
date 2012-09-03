@@ -26,7 +26,12 @@ class WP_Importer(object):
 
     def parse(self):
         data = etree.parse(self.filename)
+
+        rss = data.getroot()
+        wp_ns = '{%s}' % rss.nsmap['wp']
+
         root = data.find("channel")
+        version = root.findtext('wxr_version')
         blog = {
             'title': root.findtext('title'),
             'description': root.findtext('description'),
@@ -34,52 +39,52 @@ class WP_Importer(object):
         }
 
         # Categories
-        cats = root.findall('{http://wordpress.org/export/1.1/}category')
+        cats = root.findall(wp_ns + 'category')
         categories = []
         for c in cats:
             categories.append({
-                'name': c.findtext('{http://wordpress.org/export/1.1/}cat_name'),
-                'nice_name': c.findtext('{http://wordpress.org/export/1.1/}category_nicename'),
-                'parent': c.findtext('{http://wordpress.org/export/1.1/}parent')
+                'name': c.findtext(wp_ns + 'cat_name'),
+                'nice_name': c.findtext(wp_ns + 'category_nicename'),
+                'parent': c.findtext(wp_ns + 'parent')
             })
         # Tags
         tags = []
-        tagElements = root.findall('{http://wordpress.org/export/1.1/}tag')
+        tagElements = root.findall(wp_ns + 'tag')
         for t in tagElements:
             tags.append({
-                'name': t.findtext('{http://wordpress.org/export/1.1/}tag_name'),
-                'tag_slug': t.findtext('{http://wordpress.org/export/1.1/}tag_slug')
+                'name': t.findtext(wp_ns + 'tag_name'),
+                'tag_slug': t.findtext(wp_ns + 'tag_slug')
             })
         # posts
         posts = []
         for post in data.findall("channel/item"):
             p = {
-                'id': post.findtext('{http://wordpress.org/export/1.1/}post_id'),
+                'id': post.findtext(wp_ns + 'post_id'),
                 'title': post.findtext('title'),
-                'name': post.findtext('{http://wordpress.org/export/1.1/}post_name'),
+                'name': post.findtext(wp_ns + 'post_name'),
                 'link': post.findtext('link'),
                 'creator': post.findtext('{http://purl.org/dc/elements/1.1/}creator'),
                 'categories': dict([(c.findtext("."), "") for c in post.findall("category[@domain='category']")]).keys(),
                 'tags': dict([(c.findtext("."), "") for c in post.findall("category[@domain='post_tag']")]).keys(),
                 'description': post.findtext('description'),
                 'content': post.findtext('{http://purl.org/rss/1.0/modules/content/}encoded') if not self.do_convert else self.convert_To_Rst(post.findtext('{http://purl.org/rss/1.0/modules/content/}encoded')),
-                'post_date': datetime.datetime.strptime(post.findtext('{http://wordpress.org/export/1.1/}post_date'), "%Y-%m-%d %H:%M:%S").strftime("%Y/%m/%d %H:%M:%SZ"),
-                'status': post.findtext('{http://wordpress.org/export/1.1/}status'),
+                'post_date': datetime.datetime.strptime(post.findtext(wp_ns + 'post_date'), "%Y-%m-%d %H:%M:%S").strftime("%Y/%m/%d %H:%M:%SZ"),
+                'status': post.findtext(wp_ns + 'status'),
                 'comments': []
             }
             comments = []
             # post comments
-            post_comments = post.findall('{http://wordpress.org/export/1.1/}comment')
+            post_comments = post.findall(wp_ns + 'comment')
 
             if (len(post_comments)):
                 for c in post_comments:
                     cmt = {
-                        'author': c.findtext('{http://wordpress.org/export/1.1/}comment_author'),
-                        'author_email': c.findtext('{http://wordpress.org/export/1.1/}comment_author_email'),
-                        'author_url': c.findtext('{http://wordpress.org/export/1.1/}comment_author_url'),
-                        'author_ip': c.findtext('{http://wordpress.org/export/1.1/}comment_author_IP'),
-                        'post_date': datetime.datetime.strptime(c.findtext("{http://wordpress.org/export/1.1/}comment_date_gmt"),"%Y-%m-%d %H:%M:%S").strftime("%Y/%m/%d %H:%M:%SZ"),
-                        'content': c.findtext('{http://wordpress.org/export/1.1/}comment_content') if not self.do_convert else self.convert_To_Rst(c.findtext('{http://wordpress.org/export/1.1/}comment_content'))
+                        'author': c.findtext(wp_ns + 'comment_author'),
+                        'author_email': c.findtext(wp_ns + 'comment_author_email'),
+                        'author_url': c.findtext(wp_ns + 'comment_author_url'),
+                        'author_ip': c.findtext(wp_ns + 'comment_author_IP'),
+                        'post_date': datetime.datetime.strptime(c.findtext(wp_ns + 'comment_date_gmt'),"%Y-%m-%d %H:%M:%S").strftime("%Y/%m/%d %H:%M:%SZ"),
+                        'content': c.findtext(wp_ns + 'comment_content') if not self.do_convert else self.convert_To_Rst(c.findtext(wp_ns + 'comment_content'))
                     }
                     comments.append(cmt)
                 p['comments'] = comments
