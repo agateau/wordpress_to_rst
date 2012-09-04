@@ -2,16 +2,54 @@
 import errno
 import os
 import json
+import re
 import sys
+import xml.sax.saxutils
 
 from optparse import OptionParser
 from datetime import datetime
 
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name, TextLexer
+from pygments.formatters import HtmlFormatter
+
 USAGE = "%prog <json-file>"
 
 def fix_paragraphs(txt):
-    paras = txt.split('\n\n')
-    return '\n'.join('<p>' + x + '</p>' for x in paras)
+    def fix_paragraph(txt):
+        def wrap_p(txt):
+            if txt.startswith('<'):
+                return txt
+            else:
+                return '<p>' + txt + '</p>'
+
+        if txt.startswith('<pre'):
+            return txt
+        paras = txt.split('\n\n')
+        return '\n'.join(wrap_p(x) for x in paras)
+
+    rx = re.compile('(<pre[ >].*?</pre>)', re.DOTALL)
+    src = rx.split(txt)
+    dst = [fix_paragraph(x) for x in src]
+    return ''.join(dst)
+
+
+def format_source_code(txt):
+    def unescape(txt):
+        return xml.sax.saxutils.unescape(txt, {'&quot;': '"'})
+
+    def pygmentize(match):
+        language = match.group(1)
+        txt = unescape(match.group(2))
+        try:
+            lexer = get_lexer_by_name(language)
+        except ValueError:
+            print "WARNING: no lexer found for language '%s'" % language
+            lexer = TextLexer()
+        return highlight(txt, lexer, HtmlFormatter())
+
+    rx = re.compile('\[sourcecode language="?([a-z]+)"?\]\n*(.*?)\n*\[/sourcecode\]', re.DOTALL)
+    return rx.sub(pygmentize, txt)
 
 def quote(txt):
     return '"' + txt.replace('"', r'\"') + '"'
@@ -47,11 +85,15 @@ def process_items(items, dir_formatter):
         with open('out/%s/index.html' % path, 'w') as outfile:
             tags = item[u'categories'] + item[u'tags']
             status = item[u'status'] == 'publish' and 'yes' or 'no'
+            content = item[u'content']
+            content = format_source_code(content)
+            content = fix_paragraphs(content)
+
             print >> outfile, 'public: ' + status
             print >> outfile, ('tags: [%s]' % ','.join(quote(x) for x in tags)).encode('utf-8')
             print >> outfile, 'title: ' + quote(item[u'title']).encode('utf-8')
             print >> outfile
-            print >> outfile, fix_paragraphs(item[u'content']).encode('utf-8')
+            print >> outfile, content.encode('utf-8')
 
 def main():
     parser = OptionParser(usage=USAGE)
