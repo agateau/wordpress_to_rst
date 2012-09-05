@@ -1,1 +1,4 @@
 out2
+.*.swp
+out.json
+*.pyc
