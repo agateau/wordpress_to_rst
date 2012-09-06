@@ -68,11 +68,11 @@ def download_path_for_url(document_dir, url):
     return os.path.join(document_dir, name)
 
 
-def process_elements(document_dir, tree, tag, attribute, download_function):
+def process_elements(document_dir, parent, tag, attribute, download_function):
     def match(elt):
         value = elt.get(attribute)
         return value is not None and value.startswith(IMAGE_URL_PREFIX)
-    elements = [x for x in tree.iter(tag) if match(x)]
+    elements = [x for x in parent.iter(tag) if match(x)]
 
     for elt in elements:
         url = elt.get(attribute)
@@ -104,18 +104,22 @@ def process_file(filename, download_function):
 
     with open(filename) as f:
         header = read_header(f)
-        tree = soupparser.parse(f)
+
+        # I don't use soupparser.parse(f) because I can't get it to properly
+        # read utf-8!
+        soup = unicode(f.read(), "utf-8")
+        root = soupparser.fromstring(soup)
 
     print "# Images"
-    process_elements(document_dir, tree, "img", "src", download_function)
+    process_elements(document_dir, root, "img", "src", download_function)
     print "# Links"
-    process_elements(document_dir, tree, "a", "href", download_function)
+    process_elements(document_dir, root, "a", "href", download_function)
 
     mkdir_p(os.path.dirname(out_filename))
 
     with open(out_filename, "w") as f:
         f.write(header)
-        html = etree.tostring(tree.getroot())
+        html = etree.tostring(root)
         html = re.search("^<html>(.*)</html>$", html, re.DOTALL).group(1)
         f.write(html)
 
