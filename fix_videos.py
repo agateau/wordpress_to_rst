@@ -70,7 +70,7 @@ VIDEO_TRANSFORMERS = [
         }
     ),
     VideoTransformer(
-        re.compile('\[blip.tv (http://blip.tv/play/[A-Z0-9a-z]+).*?\]'),
+        re.compile('\[blip.tv (.*?)\]'),
         replacer_for_blip_redirected_url,
         "http://blip.tv/oembed",
     ),
