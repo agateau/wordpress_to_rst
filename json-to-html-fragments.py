@@ -51,18 +51,6 @@ def format_source_code(txt):
     rx = re.compile('\[sourcecode language="?([a-z]+)"?\]\n*(.*?)\n*\[/sourcecode\]', re.DOTALL)
     return rx.sub(pygmentize, txt)
 
-VIDEO_RX_LIST = [
-    (
-        re.compile('\[vimeo (?P<id>\d+)\]'),
-        '<a class="vimeo" href="http://www.vimeo.com/\g<id>">Video</a>'
-    ),
-]
-
-def format_videos(txt):
-    for rx, replacement in VIDEO_RX_LIST:
-        txt = rx.sub(replacement, txt)
-    return txt
-
 
 def quote(txt):
     return '"' + txt.replace('"', r'\"') + '"'
@@ -100,7 +88,6 @@ def process_items(items, dir_formatter):
             status = item[u'status'] == 'publish' and 'yes' or 'no'
             content = item[u'content']
             content = format_source_code(content)
-            content = format_videos(content)
             content = fix_paragraphs(content)
 
             print >> outfile, 'public: ' + status
