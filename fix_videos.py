@@ -75,6 +75,11 @@ VIDEO_TRANSFORMERS = [
         "http://blip.tv/oembed",
     ),
     VideoTransformer(
+        re.compile('\[gigya src="(.*?)".*?\]'),
+        replacer_for_blip_redirected_url,
+        "http://blip.tv/oembed",
+    ),
+    VideoTransformer(
         re.compile('\[youtube=(http://www.youtube.com/.*?)\]'),
         lambda x: x.group(1),
         "http://www.youtube.com/oembed",
